@@ -125,8 +125,7 @@ fun Groups(groups: List<Group>, update: (List<Group>) -> Unit) {
                                 val keyword = g.searches.firstOrNull()?.keyword.orEmpty()
                                 if (keyword.isNotBlank()) clipboard.setText(AnnotatedString(keyword))
                                 update(groups.map { if (it.id == g.id) it.copy(lastVisited = System.currentTimeMillis()) else it })
-                                try { activityStart(activityContext(activity), g.groupUrl) } catch (_: Exception) {}
-                            }) {
+                                try { activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(g.groupUrl))) } catch (_: Exception) {}
                                 Icon(Icons.Default.OpenInNew, null)
                                 Spacer(Modifier.width(5.dp))
                                 Text("Abrir")
