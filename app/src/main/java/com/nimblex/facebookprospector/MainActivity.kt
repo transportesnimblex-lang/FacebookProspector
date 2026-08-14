@@ -1,6 +1,7 @@
 package com.nimblex.facebookprospector
 
-import android.content.*
+import android.app.Activity
+mport android.content.*
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
