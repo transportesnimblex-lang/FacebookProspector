@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import java.util.concurrent.TimeUnit
@@ -83,7 +84,7 @@ fun App(activity: Activity) {
         ) { padding ->
             Box(Modifier.padding(padding)) {
                 when (tab) {
-                    0 -> Groups(groups) { groups = it }
+                    0 -> Groups(groups, activity) { groups = it }
                     1 -> Replies(replies) { replies = it }
                     2 -> ActivityScreen(groups)
                 }
@@ -93,46 +94,99 @@ fun App(activity: Activity) {
 }
 
 @Composable
-fun Groups(groups: List<Group>, update: (List<Group>) -> Unit) {
+fun Groups(
+    groups: List<Group>,
+    activity: Activity,
+    update: (List<Group>) -> Unit
+) {
     val clipboard = LocalClipboardManager.current
+
     Column(Modifier.fillMaxSize().padding(12.dp)) {
         Text("Prospección", style = MaterialTheme.typography.headlineSmall)
+
         Spacer(Modifier.height(6.dp))
+
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AssistChip(onClick = {}, label = { Text("${groups.count { it.lastVisited == null }} pendientes") })
-            AssistChip(onClick = {}, label = { Text("${groups.size} grupos") })
+            AssistChip(
+                onClick = {},
+                label = { Text("${groups.count { it.lastVisited == null }} pendientes") }
+            )
+            AssistChip(
+                onClick = {},
+                label = { Text("${groups.size} grupos") }
+            )
         }
+
         Spacer(Modifier.height(10.dp))
+
         LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             items(groups, key = { it.id }) { g ->
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(14.dp)) {
+
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Groups, null)
                             Spacer(Modifier.width(10.dp))
+
                             Column(Modifier.weight(1f)) {
-                                Text(g.name, style = MaterialTheme.typography.titleMedium)
-                                Text(g.lastVisited?.let { "🟢 ${ago(it)}" } ?: "🔴 SIN EXPLORAR")
+                                Text(
+                                    g.name,
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(
+                                    g.lastVisited?.let { "🟢 ${ago(it)}" }
+                                        ?: "🔴 SIN EXPLORAR"
+                                )
                             }
                         }
+
                         Spacer(Modifier.height(8.dp))
+
                         g.searches.forEach { s ->
-                            Text("🔎 ${s.keyword}  ·  ${s.filter}")
+                            Text("🔎 ${s.keyword} · ${s.filter}")
                         }
+
                         Spacer(Modifier.height(8.dp))
+
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
                             Button(onClick = {
-                                val keyword = g.searches.firstOrNull()?.keyword.orEmpty()
-                                if (keyword.isNotBlank()) clipboard.setText(AnnotatedString(keyword))
-                                update(groups.map { if (it.id == g.id) it.copy(lastVisited = System.currentTimeMillis()) else it })
-                                try { activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(g.groupUrl))) } catch (_: Exception) {}
+                                val keyword =
+                                    g.searches.firstOrNull()?.keyword.orEmpty()
+
+                                if (keyword.isNotBlank()) {
+                                    clipboard.setText(AnnotatedString(keyword))
+                                }
+
+                                update(
+                                    groups.map {
+                                        if (it.id == g.id) {
+                                            it.copy(
+                                                lastVisited =
+                                                    System.currentTimeMillis()
+                                            )
+                                        } else {
+                                            it
+                                        }
+                                    }
+                                )
+
+                                try {
+                                    activityStart(activity, g.groupUrl)
+                                } catch (_: Exception) {}
+                            }) {
                                 Icon(Icons.Default.OpenInNew, null)
                                 Spacer(Modifier.width(5.dp))
                                 Text("Abrir")
                             }
+
                             OutlinedButton(onClick = {
-                                g.searches.firstOrNull()?.keyword?.let { clipboard.setText(AnnotatedString(it)) }
-                            }) { Text("Copiar búsqueda") }
+                                g.searches.firstOrNull()?.keyword?.let {
+                                    clipboard.setText(AnnotatedString(it))
+                                }
+                            }) {
+                                Text("Copiar búsqueda")
+                            }
                         }
                     }
                 }
